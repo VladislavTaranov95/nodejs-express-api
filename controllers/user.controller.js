@@ -20,19 +20,13 @@ class UserController {
   }
 
   async login(req, res) {
-    try {
-      const { email, password } = req.body;
-      const user = await userService.login(res, email, password);
+    const { email, password } = req.body;
+    const user = await userService.login(req, res, email, password);
 
-      res.status(200).json({
-        message: "User logged in successfully",
-        data: user,
-      });
-    } catch (error) {
-      res.status(400).json({
-        message: error.message || "An error occurred during login",
-      });
-    }
+    res.status(200).json({
+      message: "User logged in successfully",
+      data: user,
+    });
   }
 
   async activate(req, res) {

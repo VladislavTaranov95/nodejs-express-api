@@ -6,6 +6,8 @@ const prisma = new PrismaClient();
 const tokenService = require("./token.service");
 const UserDto = require("../dtos/user.dto");
 const mailService = require("./mail.service");
+const { validationResult } = require("express-validator");
+const HttpError = require("../utils/httpError.util");
 
 class UserService {
   async register(res, email, password) {
@@ -14,7 +16,7 @@ class UserService {
     });
 
     if (candidate) {
-      throw new Error("User with this email already exists");
+      throw HttpError.badRequest("User with this email already exists");
     }
 
     const hashPassword = await bcrypt.hash(password, 10);
@@ -44,18 +46,30 @@ class UserService {
     };
   }
 
-  async login(res, email, password) {
+  async login(req, res, email, password) {
+    const errors = validationResult(req);
+
+    if (!errors.isEmpty()) {
+      const errorMessages = errors.array().map((err) => {
+        return {
+          [err.path]: err.msg,
+        };
+      });
+
+      throw HttpError.unproccessableEntity("Validation error", errorMessages);
+    }
+
     const user = await prisma.user.findUnique({
       where: { email },
     });
 
     if (!user) {
-      throw new Error("User with this email does not exist");
+      throw HttpError.badRequest("User with this email does not exist");
     }
 
     const isPasswordEqual = await bcrypt.compare(password, user.password);
     if (!isPasswordEqual) {
-      throw new Error("Incorrect password");
+      throw HttpError.badRequest("Incorrect username or password");
     }
 
     const userDto = new UserDto(user);
