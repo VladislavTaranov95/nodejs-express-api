@@ -1,0 +1,10 @@
+@import './base.css';
+@import 'tailwindcss';
+
+@theme {
+  --color-primary: oklch(0.66 0.1806 33.38);
+  --color-hover-primary: oklch(0.69 0.1561 33.02);
+
+  --color-ghost: oklch(100% 0 0);
+  --color-hover-ghost: oklch(92% 0.004 286.32);
+}
