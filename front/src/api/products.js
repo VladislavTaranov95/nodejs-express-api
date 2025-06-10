@@ -1,7 +1,7 @@
 import { ApiResource } from '@/composables/useApi'
 
 class ProductsApi extends ApiResource {
-  path = 'product'
+  path = 'products'
 
   constructor(path) {
     super(path)

@@ -1,19 +1,57 @@
 import { createFetch } from '@vueuse/core'
+import { useUserStore } from '@/stores/user'
+import router from '@/router'
 
-const fetch = createFetch({
+const useCutomFetch = createFetch({
   baseUrl: 'http://localhost:3000/api',
   combination: 'chain',
   options: {
     beforeFetch({ options }) {
-      const token = localStorage.getItem('accessToken')
+      const userStore = useUserStore()
+      const token = userStore.isAuthenticated
       options.headers.Authorization = `Bearer ${token}`
       options.headers.ContentType = 'application/json'
+      options.credentials = 'include'
       return { options }
     },
     updateDataOnError: true,
-    onFetchError: (ctx) => {
+    onFetchError: async (ctx) => {
       if (ctx.data.error) {
         ctx.error = ctx.data.error || 'An error occurred during the fetch operation'
+
+        if (ctx.response.status === 401) {
+          const response = await fetch('http://localhost:3000/api/auth/refresh', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+          })
+
+          const { data } = await response.json()
+
+          if (data) {
+            const userStore = useUserStore()
+            userStore.setAuth(data)
+
+            const retry = await fetch(ctx.context.url, {
+              ...ctx.context.options,
+              headers: {
+                ...ctx.context.options.headers,
+                Authorization: `Bearer ${data}`,
+              },
+              credentials: 'include',
+            })
+
+            ctx.data = await retry.json()
+            await userStore.loadUser()
+            ctx.error = null
+          } else {
+            ctx.error = 'Failed to refresh token. Please log in again.'
+
+            router.push({ name: 'login' })
+          }
+        }
       }
 
       return ctx
@@ -38,18 +76,18 @@ export class ApiResource {
       const query = new URLSearchParams(params).toString()
       url += `?${query}`
     }
-    return fetch(url, { throwOnFailed: true }).get().json()
+    return useCutomFetch(url).get().json()
   }
 
   post(body) {
-    return fetch(`/${this.path}`).post(body).json()
+    return useCutomFetch(`/${this.path}`).post(body).json()
   }
 
   put(id, body) {
-    return fetch(`/${this.path}/${id}`).put(body).json()
+    return useCutomFetch(`/${this.path}/${id}`).put(body).json()
   }
 
   delete(id) {
-    return fetch(`/${this.path}/${id}`).delete().json()
+    return useCutomFetch(`/${this.path}/${id}`).delete().json()
   }
 }

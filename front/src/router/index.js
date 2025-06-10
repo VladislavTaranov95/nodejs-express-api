@@ -27,14 +27,4 @@ const router = createRouter({
   ],
 })
 
-router.beforeEach(async (to, from) => {
-  const userStore = useUserStore()
-
-  if (!userStore.isBootstrapped && userStore.isAuthenticated) {
-    await userStore.loadUser()
-    return true
-  }
-  return true
-})
-
 export default router

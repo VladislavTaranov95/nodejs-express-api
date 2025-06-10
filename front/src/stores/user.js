@@ -34,18 +34,34 @@ export const useUserStore = defineStore('user', () => {
     })
 
     if (error.value) {
-      throw new Error(error.value.message)
+      throw error.value
     }
 
-    loadUser()
+    setAuth(data.value.data.accessToken)
+
+    await loadUser()
+  }
+
+  async function register(payload) {
+    const { data, error } = await UserApi.register(payload)
+
+    if (error.value) {
+      throw error.value
+    }
+
+    setAuth(data.value.data.accessToken)
+
+    await loadUser()
   }
 
   async function loadUser() {
-    const response = await UserApi.getUser()
+    const { data, error } = await UserApi.getMe()
 
-    setAuth(true)
-    setState(true)
-    setUser(response)
+    if (error.value) {
+      throw new Error(error.value.message)
+    }
+
+    setUser(data.value)
   }
 
   async function logout() {
@@ -60,6 +76,7 @@ export const useUserStore = defineStore('user', () => {
     isBootstrapped,
     logout,
     login,
+    register,
     setAuth,
     setState,
     setUser,

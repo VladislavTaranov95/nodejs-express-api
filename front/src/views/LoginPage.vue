@@ -2,26 +2,52 @@
 import { UserRoundPlus, BaggageClaim, MonitorCog, Star, UserCheck, Mail, KeyRound } from 'lucide-vue-next';
 import NTextField from '@/components/ui/NTextField.vue';
 import NButton from '@/components/ui/NButton.vue';
-import { ref } from 'vue';
 import { useNotification } from "@kyvg/vue3-notification";
 import { useUserStore } from '@/stores/user';
 import { useRouter } from 'vue-router';
-import { useFetch } from '@vueuse/core';
-import user from '@/api/user';
-
-const email = ref('');
-const password = ref('');
+import { reactive, ref } from 'vue';
+import { email, required, min } from '@/helpers/validations';
+import NForm from '@/components/ui/NForm.vue';
 
 const { notify } = useNotification()
-
 const userStore = useUserStore()
 const router = useRouter()
 
+const rules = {
+  email: [
+    required('Email'),
+    email,
+  ],
+  password: [
+    required('Password'),
+    min('Password', 8)
+  ],
+};
+
+const formRef = ref(null)
+
+const form = reactive({
+  email: '',
+  password: ''
+});
+
+
+
 const login = async () => {
+  const valid = await formRef.value.validate()
+
+  if (!valid) {
+    return notify({
+      type: "error",
+      title: "Error",
+      text: "Form is invalid",
+    });
+  }
+
   try {
     await userStore.login({
-      email: email.value,
-      password: password.value,
+      email: form.email,
+      password: form.password,
     });
 
     notify({
@@ -32,11 +58,11 @@ const login = async () => {
 
     router.push({ name: 'main' })
 
-  } catch (error) {
+  } catch (err) {
     notify({
       type: "error",
       title: "Error",
-      text: error.message,
+      text: err.message,
     });
   }
 }
@@ -118,21 +144,22 @@ const login = async () => {
           Log in with your email address and password
         </div>
 
-        <div class="bg-white p-12 flex flex-col gap-y-4 rounded-sm">
-          <NTextField label="Your email" placeholder="example@email.com" v-model="email">
+        <NForm ref="formRef" class="bg-white p-12 flex flex-col gap-y-2 rounded-sm">
+          <NTextField label="Your email" placeholder="example@email.com" v-model="form.email" :rules="rules.email">
             <template #prepend-icon>
               <Mail :size="18" />
             </template>
           </NTextField>
 
-          <NTextField label="Your password" placeholder="Password" v-model="password">
+          <NTextField label="Your password" type="password" placeholder="Password" v-model="form.password"
+            :rules="rules.password">
             <template #prepend-icon>
               <KeyRound :size="18" />
             </template>
           </NTextField>
 
-          <a href="" class="text-sm font-bold text-red-400">Forgot your password?</a>
-        </div>
+          <a href="" class="mt-4 text-sm font-bold text-red-400">Forgot your password?</a>
+        </NForm>
 
         <NButton class="w-50 self-center" @click="login">Log In</NButton>
       </div>

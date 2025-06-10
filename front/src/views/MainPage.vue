@@ -52,7 +52,7 @@ useIntersectionObserver(
     <div class="grid grid-cols-5 gap-y-10 gap-x-6">
       <template v-for="product in products" :key="product.id">
         <div class="flex flex-col items-center gap-y-6">
-          <img :src="product.productImage" class="h-[200px]" alt="">
+          <img :src="`http://localhost:3000/uploads/${product.images[0]}`" class="h-[200px]" alt="">
           <div class="flex flex-col gap-y-2 self-start w-full">
             <div class="flex justify-between">
               <div>{{ product.price }}$</div>
@@ -63,11 +63,7 @@ useIntersectionObserver(
               <div class="text-sm">{{ product.rating.count }}</div> -->
             </div>
 
-            <div class="bg-red-300 text-zinc-700 rounded-full text-sm px-2 self-start flex items-center">
-              {{ product.department }}
-            </div>
-
-            <div class="w-full overflow-ellipsis overflow-hidden whitespace-nowrap">{{ product.productName }}</div>
+            <div class="w-full overflow-ellipsis overflow-hidden whitespace-nowrap">{{ product.name }}</div>
           </div>
           <NButton class="w-full">Add to cart</NButton>
         </div>

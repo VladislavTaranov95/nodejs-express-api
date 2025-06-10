@@ -1,4 +1,5 @@
 const jwt = require("jsonwebtoken");
+const HttpError = require("../utils/httpError.util");
 
 class TokenService {
   generateTokensAndSetCookie(res, payload) {
@@ -18,7 +19,17 @@ class TokenService {
     return {
       accessToken,
       refreshToken,
+      ...payload,
     };
+  }
+
+  validateRefreshToken(refreshToken) {
+    try {
+      const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+      return { valid: true, payload: decoded };
+    } catch (err) {
+      return { valid: false, error: err.message };
+    }
   }
 }
 

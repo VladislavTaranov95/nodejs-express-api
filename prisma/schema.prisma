@@ -21,6 +21,13 @@ model User {
   activationLinkExpiresAt DateTime? @map("activation_link_expires_at")
   activated               Boolean   @default(false)
   avatar                  String?
+  job                     String?
+  phone                   String    @default("")
+  country                 String?
+  city                    String?
+  zipCode                 String?   @map("zip_code")
+  state                   String?
+  street                  String?
   email                   String    @unique
   password                String
   createdAt               DateTime  @default(now()) @map("created_at")
@@ -30,16 +37,16 @@ model User {
 }
 
 model Product {
-  id          String   @id @default(uuid())
-  product     String
+  id          String    @id @default(uuid())
   name        String
-  image       String?
+  images      String[]  @default([])
   description String
   price       Float
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-  categoryId  Int      @map("category_id")
-  category    Category @relation(fields: [categoryId], references: [id])
+  brand       String
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  categoryId  Int?      @map("category_id")
+  category    Category? @relation(fields: [categoryId], references: [id])
 
   @@map("products")
 }

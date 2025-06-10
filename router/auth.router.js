@@ -1,19 +1,15 @@
 const Router = require("express").Router;
-
-const { body } = require("express-validator");
 const userController = require("../controllers/user.controller");
+const validate = require("../middlewares/validate.middleware");
+const loginSchema = require("../validations/login.shema");
+const registerSchema = require("../validations/register.shema");
 
 const router = new Router();
 
-let validators = [
-  body("email").isEmail().withMessage("Email format is invalid"),
-  body("password")
-    .isLength({ min: 5, max: 10 })
-    .withMessage("Password must be between 5 and 10 characters long"),
-];
-
-router.post("/register", userController.register);
-router.post("/login", validators, userController.login);
+router.post("/register", validate(registerSchema), userController.register);
+router.post("/login", validate(loginSchema), userController.login);
+router.post("/refresh", userController.refresh);
+router.post("/logout", userController.logout);
 // router.post("/login", () => {});
 // router.post("/logout", () => {});
 

@@ -6,29 +6,25 @@ const prisma = new PrismaClient();
 const tokenService = require("./token.service");
 const UserDto = require("../dtos/user.dto");
 const mailService = require("./mail.service");
-const { validationResult } = require("express-validator");
 const HttpError = require("../utils/httpError.util");
 
 class UserService {
-  async register(res, email, password) {
+  async register(res, payload) {
     const candidate = await prisma.user.findUnique({
-      where: { email },
+      where: { email: payload.email },
     });
 
     if (candidate) {
       throw HttpError.badRequest("User with this email already exists");
     }
 
-    const hashPassword = await bcrypt.hash(password, 10);
+    const hashPassword = await bcrypt.hash(payload.password, 10);
     const activationLink = uuid.v4();
 
     const user = await prisma.user.create({
       data: {
-        email,
+        ...payload,
         password: hashPassword,
-        activationLink,
-        firstName: "test",
-        lastName: "test",
       },
     });
 
@@ -46,19 +42,7 @@ class UserService {
     };
   }
 
-  async login(req, res, email, password) {
-    const errors = validationResult(req);
-
-    if (!errors.isEmpty()) {
-      const errorMessages = errors.array().map((err) => {
-        return {
-          [err.path]: err.msg,
-        };
-      });
-
-      throw HttpError.unproccessableEntity("Validation error", errorMessages);
-    }
-
+  async login(res, email, password) {
     const user = await prisma.user.findUnique({
       where: { email },
     });
@@ -99,6 +83,74 @@ class UserService {
       where: { id: user.id },
       data: { isActivated: true },
     });
+  }
+
+  async refresh(req, res) {
+    const { refreshToken } = req.cookies;
+
+    if (!refreshToken) {
+      throw HttpError.unauthorized("Refresh token is required");
+    }
+    const { valid, payload } = tokenService.validateRefreshToken(refreshToken);
+
+    if (!valid) {
+      throw HttpError.unauthorized("Unauthorized access");
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: payload.id },
+    });
+
+    if (!user) {
+      throw HttpError.unauthorized("Unauthorized access");
+    }
+
+    const userDto = new UserDto(user);
+    const tokens = tokenService.generateTokensAndSetCookie(res, { ...userDto });
+
+    return {
+      accessToken: tokens.accessToken,
+      user: { ...userDto },
+    };
+  }
+
+  async getMe(req) {
+    const { refreshToken } = req.cookies;
+
+    if (!refreshToken) {
+      throw HttpError.unauthorized("Refresh token is required");
+    }
+    const { valid, payload } = tokenService.validateRefreshToken(refreshToken);
+
+    if (!valid) {
+      throw HttpError.unauthorized("Unauthorized access");
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: payload.id },
+    });
+
+    if (!user) {
+      throw HttpError.unauthorized("Unauthorized access");
+    }
+
+    const userDto = new UserDto(user);
+
+    return {
+      user: { ...userDto },
+    };
+  }
+
+  async getUser(id) {
+    const user = await prisma.user.findUnique({
+      where: { id },
+    });
+
+    if (!user) {
+      throw HttpError.notFound("User not found");
+    }
+
+    return new UserDto(user);
   }
 }
 

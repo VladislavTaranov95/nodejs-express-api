@@ -8,7 +8,12 @@ class UserApi extends ApiResource {
   }
 
   getUser() {
-    this.path = 'auth/user'
+    this.path = 'user'
+    return this.get()
+  }
+
+  getMe() {
+    this.path = 'user/me'
     return this.get()
   }
 
@@ -17,8 +22,18 @@ class UserApi extends ApiResource {
     return this.post(payload)
   }
 
+  register(payload) {
+    this.path = 'auth/register'
+    return this.post(payload)
+  }
+
   logout() {
     this.path = 'auth/logout'
+    return this.post()
+  }
+
+  refresh() {
+    this.path = 'auth/refresh'
     return this.post()
   }
 }
